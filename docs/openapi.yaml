@@ -1,0 +1,316 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent Skill & Two-Tier Harness Generator API
+  version: 1.4.0
+  description: >-
+    OpenAPI / Swagger specification for the portable Multi-Agent Skill & Two-Tier Harness
+    Generator supporting Google Gemini (Antigravity), Anthropic Claude Code, and OpenAI Codex,
+    including one-command portable `init` with per-agent model & reasoning effort customization
+    across all 6 workflow skills (`ba`, `harness`, `po`, `dev`, `tester`, `merge`).
+paths:
+  /api/v1/init:
+    post:
+      summary: Initialize and generate all 6 skills and 6 role subagents with per-agent model and effort selection
+      operationId: initSkillsWithPerAgentModels
+      tags:
+        - Generator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequest'
+      responses:
+        '200':
+          description: Successfully initialized skills, subagents, harness, and generated portable 1-line command
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallResponse'
+        '400':
+          description: Invalid target, unknown skill role, or unsupported model/effort for target platform
+  /api/v1/install:
+    post:
+      summary: Non-interactive alias to generate and install all 6 skills, 6 role subagents, Global Harness, hooks, and rules
+      operationId: installSkillsAndHarness
+      tags:
+        - Generator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitRequest'
+      responses:
+        '200':
+          description: Successfully generated and installed skills, 6 role subagents, and harness for the requested target(s)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallResponse'
+        '400':
+          description: Invalid target or configuration parameters
+  /api/v1/models:
+    get:
+      summary: Retrieve valid models, reasoning effort options, and built-in presets per agent (gemini, claude, codex)
+      operationId: getAgentModelCatalog
+      tags:
+        - Catalog
+      responses:
+        '200':
+          description: Model and effort catalog for all supported AI coding agents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCatalogResponse'
+  /api/v1/doctor:
+    get:
+      summary: Inspect installation status and 6-skill subagent model+effort profiles across Gemini, Claude Code, and Codex
+      operationId: runDoctorCheck
+      tags:
+        - Diagnostics
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [global, workspace]
+            default: global
+      responses:
+        '200':
+          description: Diagnostic status report for all supported AI coding agents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+components:
+  schemas:
+    SubagentTierProfile:
+      type: object
+      properties:
+        model:
+          type: string
+          example: opus
+        effort:
+          type: string
+          enum: [low, medium, high, max]
+          example: high
+    SubagentProfilesMap:
+      type: object
+      properties:
+        ba:
+          $ref: '#/components/schemas/SubagentTierProfile'
+        harness:
+          $ref: '#/components/schemas/SubagentTierProfile'
+        po:
+          $ref: '#/components/schemas/SubagentTierProfile'
+        dev:
+          $ref: '#/components/schemas/SubagentTierProfile'
+        tester:
+          $ref: '#/components/schemas/SubagentTierProfile'
+        merge:
+          $ref: '#/components/schemas/SubagentTierProfile'
+    InitRequest:
+      type: object
+      properties:
+        target:
+          type: string
+          default: all
+          example: all
+          description: Target AI agent(s) (`gemini`, `claude`, `codex`, `all`, or comma-separated list).
+        scope:
+          type: string
+          enum: [global, workspace]
+          default: global
+          description: Install globally into user home directory or locally into a workspace folder.
+        dest:
+          type: string
+          description: Workspace folder path when scope is 'workspace'.
+        preset:
+          type: string
+          enum: [optimal, max, economy]
+          default: optimal
+          description: Built-in 6-skill model pyramid preset applied before per-agent overrides.
+        geminiModels:
+          type: string
+          example: ba=pro,harness=pro,po=flash_lite,dev=pro,tester=flash,merge=flash
+          description: Compact per-skill model spec for Google Gemini / Antigravity (`pro`, `flash`, `flash_lite`, `inherit`).
+        claudeModels:
+          type: string
+          example: ba=opus:high,harness=sonnet:high,po=haiku:low,dev=opus:high,tester=haiku:high,merge=sonnet:medium
+          description: Compact per-skill `model:effort` spec for Anthropic Claude Code.
+        codexModels:
+          type: string
+          example: ba=gpt-5.4:high,harness=gpt-5.4:medium,po=gpt-5.4-mini:low,dev=gpt-5.4:high,tester=gpt-5.4-mini:high,merge=gpt-5.4:medium
+          description: Compact per-skill `model:reasoning_effort` spec for OpenAI Codex CLI.
+        subagentProfiles:
+          type: object
+          properties:
+            gemini:
+              $ref: '#/components/schemas/SubagentProfilesMap'
+            claude:
+              $ref: '#/components/schemas/SubagentProfilesMap'
+            codex:
+              $ref: '#/components/schemas/SubagentProfilesMap'
+        skipArchify:
+          type: boolean
+          default: false
+          description: Skip copying the bundled archify visual diagramming package.
+    ModelCatalogEntry:
+      type: object
+      properties:
+        displayName:
+          type: string
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              description:
+                type: string
+        efforts:
+          type: array
+          nullable: true
+          items:
+            type: string
+        allowCustomModel:
+          type: boolean
+    ModelCatalogResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        skills:
+          type: array
+          items:
+            type: string
+        presets:
+          type: array
+          items:
+            type: string
+        catalog:
+          type: object
+          properties:
+            gemini:
+              $ref: '#/components/schemas/ModelCatalogEntry'
+            claude:
+              $ref: '#/components/schemas/ModelCatalogEntry'
+            codex:
+              $ref: '#/components/schemas/ModelCatalogEntry'
+    TargetInstallResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        target:
+          type: string
+          enum: [gemini, claude, codex]
+        displayName:
+          type: string
+        scope:
+          type: string
+        baseDir:
+          type: string
+        skillsDir:
+          type: string
+        agentsDir:
+          type: string
+        subagentPluginDir:
+          type: string
+          nullable: true
+        commandsDir:
+          type: string
+          nullable: true
+        promptsDir:
+          type: string
+          nullable: true
+        harnessBin:
+          type: string
+        hookBin:
+          type: string
+        hooksConfigFile:
+          type: string
+          nullable: true
+        rulesFile:
+          type: string
+        skillsInstalled:
+          type: array
+          items:
+            type: string
+        subagentsInstalled:
+          type: array
+          items:
+            type: string
+          example: [ba, harness, po, dev, tester, merge]
+        subagentProfiles:
+          $ref: '#/components/schemas/SubagentProfilesMap'
+        restartRecommended:
+          type: boolean
+        installedFilesCount:
+          type: integer
+    InstallResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+        scope:
+          type: string
+        targetsInstalled:
+          type: array
+          items:
+            type: string
+        portableInitCommand:
+          type: string
+          description: Reproducible single-line init command with exact per-agent model specs for other machines.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TargetInstallResult'
+    DoctorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        devicePlatform:
+          type: string
+        nodeVersion:
+          type: string
+        agents:
+          type: array
+          items:
+            type: object
+            properties:
+              target:
+                type: string
+              displayName:
+                type: string
+              baseDir:
+                type: string
+              agentsDir:
+                type: string
+              installed:
+                type: boolean
+              hasHarness:
+                type: boolean
+              hasHook:
+                type: boolean
+              hasArchify:
+                type: boolean
+              hasRules:
+                type: boolean
+              installedSkills:
+                type: array
+                items:
+                  type: string
+              installedSubagents:
+                type: array
+                items:
+                  type: string
+              subagentProfiles:
+                $ref: '#/components/schemas/SubagentProfilesMap'

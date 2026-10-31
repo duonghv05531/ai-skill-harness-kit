@@ -1,0 +1,38 @@
+{
+  "name": "ai-skill-harness-kit",
+  "version": "1.4.0",
+  "description": "Portable Multi-Agent Skill & Two-Tier Harness Generator with Interactive Per-Agent Model Init for Google Gemini (Antigravity), Anthropic Claude Code, and OpenAI Codex",
+  "type": "module",
+  "main": "src/generator.mjs",
+  "bin": {
+    "ai-skill-harness-kit": "./bin/skill-gen.mjs",
+    "skill-gen": "./bin/skill-gen.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/duonghv05531/ai-skill-harness-kit.git"
+  },
+  "scripts": {
+    "init": "node ./bin/skill-gen.mjs init",
+    "models": "node ./bin/skill-gen.mjs models",
+    "gen": "node ./bin/skill-gen.mjs install --target all",
+    "gen:all": "node ./bin/skill-gen.mjs install --target all",
+    "gen:gemini": "node ./bin/skill-gen.mjs install --target gemini",
+    "gen:claude": "node ./bin/skill-gen.mjs install --target claude",
+    "gen:codex": "node ./bin/skill-gen.mjs install --target codex",
+    "doctor": "node ./bin/skill-gen.mjs doctor",
+    "test": "node --test ./tests/generator.test.mjs"
+  },
+  "keywords": [
+    "antigravity",
+    "gemini",
+    "claude-code",
+    "codex",
+    "skills",
+    "subagents",
+    "harness",
+    "git-worktree",
+    "archify"
+  ],
+  "license": "MIT"
+}
